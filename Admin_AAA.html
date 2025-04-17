@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<!-- saved from url=(0048)file:///C:/Users/LENOVO/Downloads/Admin_AAA.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<title>Administrador de Aplicaciones</title>
+<style>
+  :root {
+    --primary: #2196f3;
+    --dark: #1976d2;  
+    --light: #bbdefb;
+    --grey: #f5f5f5;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: var(--grey);
+  }
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .header-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .search-filters {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: var(--light);
+    border-radius: 4px;
+  }
+  .search-filters input,
+  .search-filters select {
+    padding: 8px;
+    margin-right: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 0.95em;
+    min-width: 70px;
+  }
+  button:hover {
+    background: var(--dark);
+  }
+  .app-list {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .app-list th,
+  .app-list td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  .app-list th {
+    background: var(--light);
+    font-weight: 600;
+  }
+  .comments-cell {
+    position: relative;
+  }
+  .expand-comments {
+    cursor: pointer;
+    color: var(--primary);
+  }
+  .comments-expanded {
+    position: absolute;
+    background: white;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+    min-width: 300px;
+    display: none;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 500px;
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
+  #importModal .modal-content {
+    width: 600px;
+  }
+  .pagination {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
+  }
+  .pagination button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+  .pagination span {
+    font-weight: 500;
+  }
+  .checkbox-column {
+    width: 40px;
+    text-align: center;
+  }
+  #selectAll {
+    margin: 0;
+  }
+  .app-checkbox {
+    margin: 0;
+  }
+  #deleteSelected {
+    background: #f44336;
+  }
+  #deleteSelected:hover {
+    background: #d32f2f;
+  }
+  #deleteSelected:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+  }
+  .type-editable-modal {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .type-editable-modal .combo-input {
+    width: 160px;
+    padding: 6px;
+    font-size: 1em;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #f4f7fb;
+  }
+  .type-editable-modal .type-accept-btn-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--primary);
+    font-size: 1em;
+    padding: 2px 6px;
+    border-radius: 50%;
+    margin-left: 2px;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+  }
+  .type-editable-modal .type-accept-btn-btn:hover {
+    background: #c8e6c9;
+    color: #388e3c;
+  }
+  footer {
+    text-align: center;
+    margin-top: 30px;
+    color: #555;
+    font-size: 1em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Administrador de Aplicaciones</h1>
+    <div class="header-buttons">
+      <button onclick="showImportModal()">Importar</button>
+      <button onclick="exportToExcel()">Excel</button>
+      <button onclick="printView()">Imprimir</button>
+      <button onclick="showAddModal()">Nuevo</button>
+      <button onclick="renumberIds()">Renumerar</button>
+      <button id="deleteSelected" onclick="deleteSelected()" disabled="">Eliminar</button>
+      <button onclick="backupApps()">Backup</button>
+      <button onclick="document.getElementById('restoreInput').click()">Restaurar</button>
+      <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreApps(event)">
+    </div>
+  </div>
+  <div class="search-filters">
+    <input type="text" id="searchInput" placeholder="Buscar..." onkeyup="filterApps()">
+    <select id="filterField" onchange="filterApps()">
+      <option value="all">Todos los campos</option>
+      <option value="name">Nombre</option>
+      <option value="type">Tipo</option>
+      <option value="description">Descripción</option>
+    </select>
+    <select id="typeFilter" onchange="filterApps()"><option value="all">Todos los tipos</option><option value="web">Aplicación Web</option><option value="mobile">Aplicación Móvil</option><option value="desktop">Aplicación de Escritorio</option><option value="api">API</option><option value="Aplicacion Web">Aplicacion Web</option><option value="Aplicación Web">Aplicación Web</option><option value="Generador de Bot">Generador de Bot</option><option value="Instalador">Instalador</option><option value="Generador de video">Generador de video</option><option value="LLM">LLM</option></select>
+  </div>
+  <table class="app-list">
+    <thead>
+      <tr>
+        <th class="checkbox-column">
+          <input type="checkbox" id="selectAll" onclick="toggleAllCheckboxes()">
+        </th>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Tipo</th>
+        <th>Dirección Web</th>
+        <th>Descripción</th>
+        <th>Comentarios</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="appTableBody"><tr>
+      <td class="checkbox-column">
+        <input type="checkbox" class="app-checkbox" value="111" onclick="updateDeleteSelectedButton()">
+      </td>
+      <td>111</td>
+      <td>Convergence</td>
+      <td>Aplicación Web</td>
+      <td><a href="https://convergence.ai/" target="_blank">https://convergence.ai</a></td>
+      <td>Agente de IA, automatizaciones"</td>
+      <td class="comments-cell">
+        <span class="expand-comments" onclick="toggleComments(this)">[Ver]</span>
+        <div class="comments-expanded"></div>
+      </td>
+      <td class="actions">
+        <button onclick="editApp(111)">Editar</button>
+        <button onclick="deleteApp(111)">Eliminar</button>
+      </td>
+    </tr><tr>
+      <td class="checkbox-column">
+        <input type="checkbox" class="app-checkbox" value="112" onclick="updateDeleteSelectedButton()">
+      </td>
+      <td>112</td>
+      <td>Lindy</td>
+      <td>Aplicación Web</td>
+      <td><a href="https://chat.lindy.ai/" target="_blank">https://chat.lindy.ai</a></td>
+      <td>Generador de Agentes con plantillas"</td>
+      <td class="comments-cell">
+        <span class="expand-comments" onclick="toggleComments(this)">[Ver]</span>
+        <div class="comments-expanded"></div>
+      </td>
+      <td class="actions">
+        <button onclick="editApp(112)">Editar</button>
+        <button onclick="deleteApp(112)">Eliminar</button>
+      </td>
+    </tr><tr>
+      <td class="checkbox-column">
+        <input type="checkbox" class="app-checkbox" value="113" onclick="updateDeleteSelectedButton()">
+      </td>
+      <td>113</td>
+      <td>Vertex</td>
+      <td>LLM</td>
+      <td><a href="https://cloud.google.com/vertex-ai" target="_blank">https://cloud.google.com/vertex-ai</a></td>
+      <td>Generador de Imagenes y videos de Google"</td>
+      <td class="comments-cell">
+        <span class="expand-comments" onclick="toggleComments(this)">[Ver]</span>
+        <div class="comments-expanded"></div>
+      </td>
+      <td class="actions">
+        <button onclick="editApp(113)">Editar</button>
+        <button onclick="deleteApp(113)">Eliminar</button>
+      </td>
+    </tr><tr>
+      <td class="checkbox-column">
+        <input type="checkbox" class="app-checkbox" value="114" onclick="updateDeleteSelectedButton()">
+      </td>
+      <td>114</td>
+      <td>Mercury</td>
+      <td>Aplicación Web</td>
+      <td><a href="https://chat.inceptionlabs.ai/" target="_blank">https://chat.inceptionlabs.ai/</a></td>
+      <td>Generador de aplicaciones"</td>
+      <td class="comments-cell">
+        <span class="expand-comments" onclick="toggleComments(this)">[Ver]</span>
+        <div class="comments-expanded"></div>
+      </td>
+      <td class="actions">
+        <button onclick="editApp(114)">Editar</button>
+        <button onclick="deleteApp(114)">Eliminar</button>
+      </td>
+    </tr><tr>
+      <td class="checkbox-column">
+        <input type="checkbox" class="app-checkbox" value="115" onclick="updateDeleteSelectedButton()">
+      </td>
+      <td>115</td>
+      <td>DeepSite</td>
+      <td>Aplicación Web</td>
+      <td><a href="https://huggingface.co/spaces/enzostvs/deepsite" target="_blank">https://huggingface.co/spaces/enzostvs/deepsite</a></td>
+      <td>Generador de Apicaciones en Hugging face"</td>
+      <td class="comments-cell">
+        <span class="expand-comments" onclick="toggleComments(this)">[Ver]</span>
+        <div class="comments-expanded"></div>
+      </td>
+      <td class="actions">
+        <button onclick="editApp(115)">Editar</button>
+        <button onclick="deleteApp(115)">Eliminar</button>
+      </td>
+    </tr></tbody>
+  </table>
+  <div class="pagination">
+    <button id="firstPage" onclick="goToPage(1)">« Inicio</button>
+    <button id="prevPage" onclick="goToPage(currentPage - 1)">Anterior</button>
+    <span id="pageInfo">Página 12 de 12</span>
+    <button id="nextPage" onclick="goToPage(currentPage + 1)" disabled="">Siguiente</button>
+    <button id="lastPage" onclick="goToMaxPage()" disabled="">Final »</button>
+  </div>
+</div>
+<footer>
+  Elaborado por: Ing. Jesus Tordoya Cornejo Junio 2024
+</footer>
+<div id="appModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <h2 id="modalTitle">Editar Aplicación</h2>
+    <form id="appForm">
+      <input type="hidden" id="appId" value="10">
+      <div class="form-group">
+        <label for="appName">Nombre:</label>
+        <input type="text" id="appName" required="">
+      </div>
+      <div class="form-group">
+        <label for="appType">Tipo:</label>
+        <div id="typeEditor" class="type-editable-modal">
+          <input list="appTypes" id="appType" required="" class="combo-input" ondblclick="this.value=&#39;&#39;;this.form.elements.appTypeSaveBtn.focus()">
+          <datalist id="appTypes">
+            <option value="web">Aplicación Web</option>
+            <option value="mobile">Aplicación Móvil</option>
+            <option value="desktop">Aplicación de Escritorio</option>
+            <option value="api">API</option>
+          <option value="Aplicación Web">Aplicación Web</option><option value="Aplicacion Web">Aplicacion Web</option><option value="Generador de Bot">Generador de Bot</option><option value="Generador de video">Generador de video</option></datalist>
+          <button type="button" id="appTypeSaveBtn" class="type-accept-btn-btn" title="Guardar nuevo tipo">
+            <svg height="14" width="14" viewBox="0 0 2020"><path d="M7.9 9.7l-.8.8 88.8 8.8-8.8-8.8  8.8 8.8-8.8" fill="currentcurrentColor"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="appUrl">Dirección Web:</label>
+        <input type="url" id="appUrl" required="">
+      </div>
+      <div class="form-group">
+        <label for="appDescription">Descripción:</label>
+        <textarea id="appDescription" rows="3" required=""></textarea>
+      </div>
+      <div class="form-group">
+        <label for="appComments">Comentarios:</label>
+        <textarea id="appComments" rows="4"></textarea>
+      </div>
+      <div class="actions">
+        <button type="submit">Guardar</button>
+        <button type="button" onclick="closeModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="importModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <h2>Importar Lista</h2>
+    <p>
+      Puede importar en dos formatos:<br>
+      <b>1)</b> <i>Nombre: Dirección Web</i> (una por línea)<br>
+      <b>2)</b> <i>ID [opcional], Nombre, Tipo, URL, Descripción, Comentarios</i> (separado por tabulador o coma, como el archivo exportado)
+    </p>
+    <div class="form-group">
+      <textarea id="importText" rows="10" placeholder="Ejemplo:
+Google: https://www.google.com
+Facebook: https://www.facebook.com
+
+O en formato CSV/tab:
+ID	Nombre	Tipo	URL	Descripción	Comentarios
+1	App1	web	https://app1.com	Descripción1	Comentario1
+2	App2	desktop	https://app2.com	Descripción2	Comentario2" style="width: 619px; height: 605px;"></textarea>
+    </div>
+    <div class="actions">
+      <button onclick="importList()">Importar</button>
+      <button onclick="closeImportModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+<script>
+window.currentFilteredApps = null;
+let apps = JSON.parse(localStorage.getItem('apps')) || [];
+let nextId = Math.max(...apps.map(app => app.id), 0) + 1;
+let currentPage = 1;
+const itemsPerPage = 10;
+const knownTypes = [
+  { value: "web", label: "Aplicación Web" },
+  { value: "mobile", label: "Aplicación Móvil" },
+  { value: "desktop", label: "Aplicación de Escritorio" },
+  { value: "api", label: "API" }
+];
+function renderApps(appsToRender = apps) {
+  const tbody = document.getElementById('appTableBody');
+  tbody.innerHTML = '';
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedApps = appsToRender.slice(startIndex, endIndex);
+  paginatedApps.forEach(app => {
+    let showType = getAppTypeLabel(app.type);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="checkbox-column">
+        <input type="checkbox" class="app-checkbox" value="${app.id}" onclick="updateDeleteSelectedButton()">
+      </td>
+      <td>${app.id}</td>
+      <td>${app.name}</td>
+      <td>${showType}</td>
+      <td><a href="${app.url}" target="_blank">${app.url}</a></td>
+      <td>${app.description}</td>
+      <td class="comments-cell">
+        <span class="expand-comments" onclick="toggleComments(this)">[Ver]</span>
+        <div class="comments-expanded">${app.comments ? app.comments.replace(/\n/g, "<br>") : ''}</div>
+      </td>
+      <td class="actions">
+        <button onclick="editApp(${app.id})">Editar</button>
+        <button onclick="deleteApp(${app.id})">Eliminar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updatePaginationControls();
+}
+function getAppTypeLabel(type) {
+  if (!type) return '';
+  const types = {
+    web: 'Aplicación Web',
+    mobile: 'Aplicación Móvil',
+    desktop: 'Aplicación de Escritorio',
+    api: 'API'
+  };
+  return types[type] || type;
+}
+function showImportModal() {
+  document.getElementById('importModal').style.display = 'flex';
+}
+function closeImportModal() {
+  document.getElementById('importModal').style.display = 'none';
+  document.getElementById('importText').value = '';
+}
+function importList() {
+  const importText = document.getElementById('importText').value.trim();
+  if (!importText) return;
+
+  // Detectar si es CSV (tiene tabulaciones o varias columnas separadas por coma)
+  const isCSV = importText.includes('\t') || (importText.split('\n')[0].split(',').length >= 4);
+
+  let imported = 0;
+  if (isCSV) {
+    // Soporta formato exportado: ID,Nombre,Tipo,URL,Descripción,Comentarios (separado por tab o coma)
+    const lines = importText.split('\n').filter(line => line.trim());
+    // Detectar delimitador
+    const delimiter = lines[0].includes('\t') ? '\t' : ',';
+    // Si la primera línea es cabecera, saltarla
+    let startIdx = 0;
+    const header = lines[0].toLowerCase();
+    if (
+      header.includes('nombre') &&
+      header.includes('url')
+    ) {
+      startIdx = 1;
+    }
+    for (let i = startIdx; i < lines.length; i++) {
+      const cols = lines[i].split(delimiter).map(s => s.trim());
+      // Permitir con o sin ID, con o sin tipo
+      let [id, name, type, url, description, comments] = cols;
+      if (cols.length === 5) {
+        // Sin comentarios
+        [id, name, type, url, description] = cols;
+        comments = '';
+      }
+      if (cols.length === 4) {
+        // Sin tipo ni comentarios
+        [id, name, url, description] = cols;
+        type = 'web';
+        comments = '';
+      }
+      if (cols.length === 3) {
+        // Solo nombre, url, descripción
+        [name, url, description] = cols;
+        type = 'web';
+        comments = '';
+        id = '';
+      }
+      if (name && url) {
+        apps.push({
+          id: nextId++,
+          name,
+          type: type || 'web',
+          url,
+          description: description || '',
+          comments: comments || ''
+        });
+        imported++;
+      }
+    }
+  } else {
+    // Modo simple: Nombre: URL
+    const lines = importText.split('\n').filter(line => line.trim());
+    lines.forEach(line => {
+      const [name, url] = line.split(':').map(str => str.trim());
+      if (name && url) {
+        const newApp = {
+          id: nextId++,
+          name: name,
+          type: 'web',
+          url: url,
+          description: 'Importado',
+          comments: ''
+        };
+        apps.push(newApp);
+        imported++;
+      }
+    });
+  }
+
+  currentPage = 1;
+  window.currentFilteredApps = null;
+  saveApps();
+  filterApps();
+  closeImportModal();
+
+  if (imported === 0) {
+    alert('No se importaron registros. Verifique el formato.');
+  } else {
+    alert(`Importadas ${imported} aplicaciones.`);
+  }
+}
+function filterApps() {
+  currentPage = 1;
+  const searchText = document.getElementById('searchInput').value.toLowerCase();
+  const filterField = document.getElementById('filterField').value;
+  const typeFilter = document.getElementById('typeFilter').value;
+  let filteredApps = apps.filter(app => {
+    const matchesType = typeFilter === 'all' || app.type === typeFilter;
+    if (!matchesType) return false;
+    if (!searchText) return true;
+    if (filterField === 'all') {
+      return Object.values(app).some(value => String(value).toLowerCase().includes(searchText));
+    } else {
+      return String(app[filterField]).toLowerCase().includes(searchText);
+    }
+  });
+  window.currentFilteredApps = filteredApps;
+  renderApps(filteredApps);
+  document.getElementById('selectAll').checked = false;
+  updateDeleteSelectedButton();
+}
+function toggleComments(element) {
+  const expandedDiv = element.nextElementSibling;
+  const isVisible = expandedDiv.style.display === 'block';
+  document.querySelectorAll('.comments-expanded').forEach(div => {
+    div.style.display = 'none';
+  });
+  if (!isVisible) {
+    expandedDiv.style.display = 'block';
+  }
+}
+function showAddModal() {
+  document.getElementById('modalTitle').textContent = 'Nueva Aplicación';
+  document.getElementById('appForm').reset();
+  document.getElementById('appId').value = '';
+  const appType = document.getElementById('appType');
+  appType.value = 'web';
+  document.getElementById('appModal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('appModal').style.display = 'none';
+}
+function editApp(id) {
+  const app = apps.find(app => app.id === id);
+  if (app) {
+    document.getElementById('modalTitle').textContent = 'Editar Aplicación';
+    document.getElementById('appId').value = app.id;
+    document.getElementById('appName').value = app.name;
+    // --- Sincronizar filtro de tipo con la entrada de edición ---
+    const appTypeInput = document.getElementById('appType');
+    const appTypesDatalist = document.getElementById('appTypes');
+    const typeFilter = document.getElementById('typeFilter');
+    const typeValue = app.type;
+    if (typeValue && !Array.from(appTypesDatalist.options).some(opt => opt.value === typeValue)) {
+      const newOpt = document.createElement('option');
+      newOpt.value = typeValue;
+      newOpt.text = typeValue;
+      appTypesDatalist.appendChild(newOpt);
+    }
+    if (typeValue && !Array.from(typeFilter.options).some(opt => opt.value === typeValue)) {
+      const newOpt = document.createElement('option');
+      newOpt.value = typeValue;
+      newOpt.text = typeValue;
+      typeFilter.appendChild(newOpt);
+    }
+    appTypeInput.value = typeValue;
+    document.getElementById('appUrl').value = app.url;
+    document.getElementById('appDescription').value = app.description;
+    document.getElementById('appComments').value = app.comments || '';
+    document.getElementById('appModal').style.display = 'flex';
+  }
+}
+function deleteApp(id) {
+  if (confirm('¿Está seguro de eliminar esta aplicación?')) {
+    apps = apps.filter(app => app.id !== id);
+    window.currentFilteredApps = null;
+    const totalPages = Math.ceil(apps.length / itemsPerPage);
+    if (currentPage > totalPages) {
+      currentPage = totalPages || 1;
+    }
+    saveApps();
+    filterApps();
+  }
+}
+function saveApps() {
+  localStorage.setItem('apps', JSON.stringify(apps));
+}
+function goToPage(page) {
+  const appsToUse = window.currentFilteredApps || apps;
+  const maxPage = Math.ceil(appsToUse.length / itemsPerPage);
+  if (page >= 1 && page <= maxPage) {
+    currentPage = page;
+    updatePaginationButtons(page, maxPage);
+    renderApps(appsToUse);
+  }
+}
+function goToMaxPage() {
+  const appsToUse = window.currentFilteredApps || apps;
+  const maxPage = Math.ceil(appsToUse.length / itemsPerPage) || 1;
+  goToPage(maxPage);
+}
+function updatePaginationControls() {
+  const appsToUse = window.currentFilteredApps || apps;
+  const totalPages = Math.ceil(appsToUse.length / itemsPerPage) || 1;
+  updatePaginationButtons(currentPage, totalPages);
+}
+function updatePaginationButtons(page, totalPages) {
+  document.getElementById('nextPage').disabled = page >= totalPages;
+  document.getElementById('prevPage').disabled = page <= 1;
+  document.getElementById('firstPage').disabled = page == 1;
+  document.getElementById('lastPage').disabled = page >= totalPages;
+  document.getElementById('pageInfo').innerHTML = `Página ${page} de ${totalPages}`;
+}
+function nextPage() {
+  goToPage(currentPage + 1);
+}
+function previousPage() {
+  goToPage(currentPage - 1);
+}
+function renumberIds() {
+  if (confirm('¿Está seguro de renumerar todos los IDs? Esta acción no se puede deshacer.')) {
+    apps.sort((a, b) => a.id - b.id);
+    apps.forEach((app, index) => {
+      app.id = index + 1;
+    });
+    nextId = apps.length + 1;
+    window.currentFilteredApps = null;
+    saveApps();
+    filterApps();
+  }
+}
+function toggleAllCheckboxes() {
+  const checkboxes = document.querySelectorAll('.app-checkbox');
+  const selectAll = document.getElementById('selectAll');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = selectAll.checked;
+  });
+  updateDeleteSelectedButton();
+}
+function updateDeleteSelectedButton() {
+  const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
+  document.getElementById('deleteSelected').disabled = checkedBoxes.length === 0;
+}
+function deleteSelected() {
+  const checkedBoxes = document.querySelectorAll('.app-checkbox:checked');
+  if (checkedBoxes.length === 0) return;
+  if (confirm(`¿Está seguro de eliminar ${checkedBoxes.length} aplicación(es)?`)) {
+    const idsToDelete = Array.from(checkedBoxes).map(checkbox => parseInt(checkbox.value));
+    apps = apps.filter(app => !idsToDelete.includes(app.id));
+    window.currentFilteredApps = null;
+    const totalPages = Math.ceil(apps.length / itemsPerPage);
+    if (currentPage > totalPages) {
+      currentPage = totalPages || 1;
+    }
+    saveApps();
+    filterApps();
+    document.getElementById('selectAll').checked = false;
+    updateDeleteSelectedButton();
+  }
+}
+document.getElementById('appForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const id = document.getElementById('appId').value;
+  const newApp = {
+    id: id ? parseInt(id) : nextId++,
+    name: document.getElementById('appName').value,
+    type: document.getElementById('appType').value,
+    url: document.getElementById('appUrl').value,
+    description: document.getElementById('appDescription').value,
+    comments: document.getElementById('appComments').value
+  };
+  if (id) {
+    const index = apps.findIndex(app => app.id === parseInt(id));
+    apps[index] = newApp;
+  } else {
+    apps.push(newApp);
+  }
+  saveApps();
+  window.currentFilteredApps = null;
+  filterApps();
+  closeModal();
+});
+window.onclick = function (event) {
+  const modal = document.getElementById('appModal');
+  const importModal = document.getElementById('importModal');
+  if (event.target === modal) {
+    closeModal();
+  }
+  if (event.target === importModal) {
+    closeImportModal();
+  }
+};
+const typeSaveBtn = document.getElementById('appTypeSaveBtn');
+const appType = document.getElementById('appType');
+const appDataList = document.getElementById('appTypes');
+typeSaveBtn.onclick = function() {
+  const newType = appType.value.trim();
+  if (newType) {
+    const optionExists = Array.from(appDataList.options).some(opt => opt.value === newType);
+    if (newType && !optionExists) {
+      const newOpt = document.createElement('option');
+      newOpt.value = newType;
+      newOpt.text = newType;
+      appDataList.appendChild(newOpt);
+      // Update filter
+      const typeFilter = document.getElementById('typeFilter');
+      const mainTypes = ['web', 'mobile', 'desktop', 'api'];
+      mainTypes.forEach(main => {
+        if (!Array.from(typeFilter.options).some(opt => opt.value === main)) {
+          const opt = document.createElement('option');
+          opt.value = main;
+          opt.text = getAppTypeLabel(main);
+          typeFilter.appendChild(opt);
+        }
+      });
+      if (!mainTypes.includes(newType) && !Array.from(typeFilter.options).some(opt => opt.value === newType)) {
+        const newOpt = document.createElement('option');
+        newOpt.value = newType;
+        newOpt.text = newType;
+        typeFilter.appendChild(newOpt);
+      }
+    }
+  }
+  // Update Apps list
+  apps.forEach(app => {
+    if (!['web', 'mobile', 'desktop', 'api'].includes(app.type)) {
+      if (!Array.from(typeFilter.options).some(opt => opt.value === app.type)) {
+        const newTypeOpt = document.createElement('option');
+        newTypeOpt.value = app.type;
+        newTypeOpt.text = app.type;
+        typeFilter.appendChild(newTypeOpt);
+      }
+    }
+  });
+  renderApps();
+};
+appType.addEventListener('keydown', (e) => {
+  if (e.key === "Enter") {
+    typeSaveBtn.click();
+  }
+});
+function refreshTypeFilter() {
+  const typeFilter = document.getElementById('typeFilter');
+  typeFilter.innerHTML = '<option value="all">Todos los tipos</option>';
+  const mainTypes = ['web', 'mobile', 'desktop', 'api'];
+  mainTypes.forEach(main => {
+    const opt = document.createElement('option');
+    opt.value = main;
+    opt.text = getAppTypeLabel(main);
+    typeFilter.appendChild(opt);
+  });
+  const allTypes = new Set(apps.map(a => a.type));
+  const customTypes = [...new Set(allTypes)].filter(type => !mainTypes.includes(type.trim()));
+  customTypes.forEach(type => {
+    if (type) {
+      const opt = document.createElement('option');
+      opt.value = type;
+      opt.text = type;
+      typeFilter.appendChild(opt);
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', refreshTypeFilter);
+function printView() {
+  const printWindow = window.open('', '', 'width=800,height=600');
+  printWindow.document.open();
+  const selectedIds = Array.from(document.querySelectorAll('.app-checkbox:checked')).map(cb => parseInt(cb.value));
+  const appsToPrint = selectedIds.length > 0 
+    ? (window.currentFilteredApps || apps).filter(app => selectedIds.includes(app.id))
+    : (window.currentFilteredApps || apps);
+  let printContent = `
+    <html>
+      <head>
+        <title>Lista de Aplicaciones</title>
+        <style>
+          body { font-family: Arial; font-size: 11px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th, td { border: 1px solid #ddd; padding: 3px; text-align: left; }
+          th { background-color: #f2f2f2; font-weight: bold; }
+          h1 { text-align: center; margin-bottom: 10px; }
+          .page { page-break-after: always; }
+          .header { margin-bottom: 10px; text-align: right; font-size: small; }
+          .url-cell { max-width: 180px; word-break: break-all; }
+          .desc-cell { max-width: 300px; word-break: break-word; }
+        </style>
+      </head>
+      <body>
+        <div class="header">Generado: ${new Date().toLocaleString()} | ${selectedIds.length > 0 ? `${selectedIds.length} aplicaciones seleccionadas` : ''}</div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Dirección Web</th>
+              <th>Descripción</th>
+              <th>Comentarios</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+  const batchSize = 26;
+  const totalBatches = Math.ceil(appsToPrint.length / batchSize);
+  appsToPrint.forEach((app, index) => {
+    printContent += `
+      <tr>
+        <td>${app.id}</td>
+        <td>${app.name}</td>
+        <td class="url-cell">${app.url}</td>
+        <td class="desc-cell">${app.description.replace(/\n/g, "<br>")}</td>
+        <td>${app.comments ? app.comments.replace(/\n/g, "<br>") : ''}</td>
+      </tr>
+    `;
+    if ((index + 1) % batchSize === 0 && index !== appsToPrint.length - 1) {
+      printContent += `
+        <div class="page" style="page-break-after: always;"></div>
+        <div class="header">Página ${Math.floor((index + 1) / batchSize) + 1} de ${totalBatches}</div>
+      `;
+    }
+  });
+  printContent += `
+          </tbody>
+        </table>
+        <div class="footer">Imprimido: ${new Date().toLocaleString()}</div>
+      </body>
+    </html>
+  `;
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    printWindow.print();
+  }, 500);
+}
+function exportToExcel() {
+  const appsToExport = window.currentFilteredApps || apps;
+  const blob = new Blob([`ID\tNombre\tTipo\tURL\tDescripción\n` 
+    + appsToExport.map(app => [
+      app.id,
+      app.name,
+      app.type,
+      app.url,
+      app.description.replace(/\n/g, ' ')
+    ].join('\t')).join('\n')], {type: 'text/csv'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'lista-aplicaciones.csv';
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+function backupApps() {
+  const dataStr = JSON.stringify(apps, null, 2);
+  const blob = new Blob([dataStr], {type: 'application/json'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'backup-aplicaciones.json';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+}
+function restoreApps(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const restored = JSON.parse(e.target.result);
+      if (!Array.isArray(restored)) throw new Error('Formato inválido');
+      if (!restored.every(app => app.id && app.name && app.url)) throw new Error('Faltan campos requeridos');
+      if (confirm('¿Desea reemplazar la lista actual por la del backup?')) {
+        apps = restored;
+        nextId = Math.max(...apps.map(app => app.id), 0) + 1;
+        window.currentFilteredApps = null;
+        saveApps();
+        filterApps();
+        refreshTypeFilter();
+        alert('Restauración completada.');
+      }
+    } catch (err) {
+      alert('Error al restaurar backup: ' + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+renderApps();
+</script>
+
+</body></html>
